@@ -28,10 +28,11 @@ fn main() -> io::Result<()> {
 
     let src = args[1].clone();
     let mut dst = args[1].clone();
+    let mut status = "Press Enter to rename, Esc to cancel".to_string();
 
     loop {
         terminal.draw(|f| {
-            render(f, &src, &dst);
+            render(f, &src, &dst, &status);
         })?;
 
         if poll(Duration::from_millis(32))? {
@@ -47,9 +48,7 @@ fn main() -> io::Result<()> {
                         Ok(_) => {
                             break;
                         }
-                        Err(e) => {
-                            eprintln!("Error renaming: {}", e);
-                        }
+                        Err(e) => status = format!("{}", e),
                     },
                     _ => {}
                 }
@@ -70,7 +69,7 @@ fn center(area: Rect, horizontal: Constraint, vertical: Constraint) -> Rect {
     area
 }
 
-fn render(frame: &mut Frame, src: &str, dst: &str) {
+fn render(frame: &mut Frame, src: &str, dst: &str, status: &str) {
     let size = frame.area();
 
     let vchunks = Layout::default()
@@ -88,21 +87,22 @@ fn render(frame: &mut Frame, src: &str, dst: &str) {
         .flex(Flex::Center)
         .split(vchunks[0]);
 
+    let block_width = std::cmp::min(size.width, 128);
     let src_para = filename_block("Current filename", src, Color::Yellow);
     let dst_para = filename_block("New filename", dst, Color::White);
 
     let src_area = center(
         ui_chunks[0],
-        Constraint::Length((src.len() as u16) + 16),
+        Constraint::Length(block_width),
         Constraint::Length(3),
     );
     let dst_area = center(
         ui_chunks[1],
-        Constraint::Length((dst.len() as u16) + 16),
+        Constraint::Length(block_width),
         Constraint::Length(3),
     );
 
-    let status_line = Paragraph::new(Text::raw("Press Enter to apply, Esc to cancel"))
+    let status_line = Paragraph::new(Text::raw(status))
         .style(Style::default().fg(Color::Gray))
         .alignment(ratatui::layout::Alignment::Center);
 
