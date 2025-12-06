@@ -11,7 +11,11 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Paragraph},
     Frame, Terminal,
 };
-use std::{env, fs, io, time::Duration};
+use std::{
+    env, fs, io,
+    process::{Command, Stdio},
+    time::Duration,
+};
 
 struct ThemeEntry {
     pub bg: Option<Color>,
@@ -54,10 +58,16 @@ impl StatusTheme {
 }
 
 fn main() -> io::Result<()> {
-    let args: Vec<String> = env::args().collect();
+    let mut args: Vec<String> = env::args().collect();
     if args.len() < 2 {
         eprintln!("Usage: lazyrename <filename>");
         std::process::exit(1);
+    }
+
+    let mut helix_zellij_mode = false;
+    if let Some(pos) = args.iter().position(|x| x == "-hz") {
+        helix_zellij_mode = true;
+        args.remove(pos);
     }
 
     let theme = Theme {
@@ -139,6 +149,9 @@ fn main() -> io::Result<()> {
     disable_raw_mode()?;
     execute!(std::io::stdout(), LeaveAlternateScreen)?;
     println!("{}", dst);
+    if helix_zellij_mode {
+        open_in_helix(&dst);
+    }
     return Ok(());
 }
 
@@ -232,4 +245,24 @@ fn rename(src: &str, dst: &str) -> io::Result<()> {
     }
     fs::rename(src, dst)?;
     Ok(())
+}
+
+fn zellij_action(args: &[&str]) {
+    let _ = Command::new("zellij")
+        .arg("action")
+        .args(args)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status();
+}
+
+fn open_in_helix(filename: &str) {
+    let helix_command = format!(":open {}", filename);
+
+    zellij_action(&["toggle-floating-panes"]);
+    zellij_action(&["write", "27"]);
+    zellij_action(&["write-chars", ":buffer-close"]);
+    zellij_action(&["write", "13"]);
+    zellij_action(&["write-chars", &helix_command]);
+    zellij_action(&["write", "13"]);
 }
