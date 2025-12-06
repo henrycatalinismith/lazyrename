@@ -1,4 +1,5 @@
 use crossterm::{
+    event::{poll, Event, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -8,7 +9,7 @@ use ratatui::{
     text::Text,
     Frame, Terminal,
 };
-use std::io;
+use std::{io, time::Duration};
 
 fn main() -> io::Result<()> {
     enable_raw_mode()?;
@@ -22,10 +23,10 @@ fn main() -> io::Result<()> {
             render(f);
         })?;
 
-        if crossterm::event::poll(std::time::Duration::from_millis(32))? {
-            if let crossterm::event::Event::Key(key) = crossterm::event::read()? {
+        if poll(Duration::from_millis(32))? {
+            if let Event::Key(key) = crossterm::event::read()? {
                 match key.code {
-                    crossterm::event::KeyCode::Esc => break,
+                    KeyCode::Esc => break,
                     _ => {}
                 }
             }
