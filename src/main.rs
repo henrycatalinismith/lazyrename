@@ -27,7 +27,7 @@ fn main() -> io::Result<()> {
     let mut terminal = Terminal::new(backend)?;
 
     let src = args[1].clone();
-    let dst = args[1].clone();
+    let mut dst = args[1].clone();
 
     loop {
         terminal.draw(|f| {
@@ -38,6 +38,10 @@ fn main() -> io::Result<()> {
             if let Event::Key(key) = crossterm::event::read()? {
                 match key.code {
                     KeyCode::Esc => break,
+                    KeyCode::Char(c) => dst.push(c), // add typed char
+                    KeyCode::Backspace => {
+                        dst.pop();
+                    }
                     _ => {}
                 }
             }
