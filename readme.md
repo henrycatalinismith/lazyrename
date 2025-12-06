@@ -2,6 +2,8 @@
 
 File rename TUI intended for easy integration with Helix and Zellij.
 
+<video src="https://codeberg.org/henrycatalinismith/lazyrename/media/branch/main/demo.mp4" width="512" controls></video>
+
 If you use Helix and Zellij, lazyrename is a way to hook up a nice file renaming workflow.
 The idea is that lazyrename handles all the dirty work for you. You don't need to think about
 
