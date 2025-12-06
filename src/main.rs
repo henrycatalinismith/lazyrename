@@ -67,31 +67,35 @@ fn render(frame: &mut Frame, src: &str, dst: &str) {
 
     let ui_chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(5), Constraint::Length(2)])
+        .constraints([Constraint::Length(3), Constraint::Length(3)])
         .flex(Flex::Center)
         .split(vchunks[0]);
 
-    let src_para = Paragraph::new(Text::raw(src))
-        .style(Style::default().fg(Color::Yellow))
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Title")
-                .border_type(BorderType::Rounded),
-        );
-    let dst_para = Paragraph::new(Text::raw(dst));
+    let src_para = filename_block("Current filename", src, Color::Yellow);
+    let dst_para = filename_block("New filename", dst, Color::White);
 
     let src_area = center(
         ui_chunks[0],
-        Constraint::Length((src.len() as u16) + 4),
+        Constraint::Length((src.len() as u16) + 16),
         Constraint::Length(3),
     );
     let dst_area = center(
         ui_chunks[1],
-        Constraint::Length(dst.len() as u16),
-        Constraint::Length(1),
+        Constraint::Length((dst.len() as u16) + 16),
+        Constraint::Length(3),
     );
 
     frame.render_widget(src_para, src_area);
     frame.render_widget(dst_para, dst_area);
+}
+
+fn filename_block<'a>(label: &'a str, filename: &'a str, fg: Color) -> Paragraph<'a> {
+    Paragraph::new(Text::raw(filename))
+        .style(Style::default().fg(fg))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_type(BorderType::Rounded)
+                .title(label),
+        )
 }
