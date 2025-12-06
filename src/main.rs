@@ -9,9 +9,15 @@ use ratatui::{
     text::Text,
     Frame, Terminal,
 };
-use std::{io, time::Duration};
+use std::{env, io, time::Duration};
 
 fn main() -> io::Result<()> {
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 2 {
+        eprintln!("Usage: lazyrename <filename>");
+        std::process::exit(1);
+    }
+
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen)?;
