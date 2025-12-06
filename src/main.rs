@@ -13,6 +13,7 @@ use ratatui::{
 };
 use std::{
     env, fs, io,
+    path::Path,
     process::{Command, Stdio},
     time::Duration,
 };
@@ -242,6 +243,12 @@ fn status_widget<'a>(status: &'a Status, theme: &'a StatusTheme) -> Paragraph<'a
 fn rename(src: &str, dst: &str) -> io::Result<()> {
     if src == dst {
         return Ok(());
+    }
+    let dst_path = Path::new(dst);
+    if let Some(parent) = dst_path.parent() {
+        if !parent.as_os_str().is_empty() {
+            fs::create_dir_all(parent)?;
+        }
     }
     fs::rename(src, dst)?;
     Ok(())
