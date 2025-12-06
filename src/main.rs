@@ -24,9 +24,11 @@ fn main() -> io::Result<()> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
+    let filename = args[1].clone();
+
     loop {
         terminal.draw(|f| {
-            render(f);
+            render(f, &filename);
         })?;
 
         if poll(Duration::from_millis(32))? {
@@ -52,8 +54,8 @@ fn center(area: Rect, horizontal: Constraint, vertical: Constraint) -> Rect {
     area
 }
 
-fn render(frame: &mut Frame) {
-    let text = Text::raw("Hello world!");
+fn render(frame: &mut Frame, filename: &str) {
+    let text = Text::raw(filename);
     let area = center(
         frame.area(),
         Constraint::Length(text.width() as u16),
