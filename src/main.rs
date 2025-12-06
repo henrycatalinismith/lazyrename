@@ -6,8 +6,9 @@ use crossterm::{
 use ratatui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Flex, Layout, Rect},
+    style::{Color, Style},
     text::Text,
-    widgets::Paragraph,
+    widgets::{Block, BorderType, Borders, Paragraph},
     Frame, Terminal,
 };
 use std::{env, io, time::Duration};
@@ -61,23 +62,29 @@ fn render(frame: &mut Frame, src: &str, dst: &str) {
 
     let vchunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(2)])
-        .vertical_margin((size.height - 2) / 2)
+        .constraints([Constraint::Percentage(100)])
         .split(size);
 
     let ui_chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(1), Constraint::Length(2)])
-        .horizontal_margin(0)
+        .constraints([Constraint::Length(5), Constraint::Length(2)])
+        .flex(Flex::Center)
         .split(vchunks[0]);
 
-    let src_para = Paragraph::new(Text::raw(src));
+    let src_para = Paragraph::new(Text::raw(src))
+        .style(Style::default().fg(Color::Yellow))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Title")
+                .border_type(BorderType::Rounded),
+        );
     let dst_para = Paragraph::new(Text::raw(dst));
 
     let src_area = center(
         ui_chunks[0],
-        Constraint::Length(src.len() as u16),
-        Constraint::Length(1),
+        Constraint::Length((src.len() as u16) + 4),
+        Constraint::Length(3),
     );
     let dst_area = center(
         ui_chunks[1],
