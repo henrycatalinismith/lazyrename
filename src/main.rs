@@ -63,21 +63,21 @@ fn main() -> io::Result<()> {
     let theme = Theme {
         src: WidgetTheme {
             block: ThemeEntry {
-                bg: Some(Color::Black),
-                fg: Some(Color::Black),
+                bg: None,
+                fg: Some(Color::Blue),
             },
             text: ThemeEntry {
-                bg: Some(Color::Black),
+                bg: None,
                 fg: Some(Color::Black),
             },
         },
         dst: WidgetTheme {
             block: ThemeEntry {
-                bg: Some(Color::White),
+                bg: None,
                 fg: Some(Color::White),
             },
             text: ThemeEntry {
-                bg: Some(Color::White),
+                bg: None,
                 fg: Some(Color::White),
             },
         },
@@ -116,7 +116,7 @@ fn main() -> io::Result<()> {
             if let Event::Key(key) = crossterm::event::read()? {
                 match key.code {
                     KeyCode::Esc => break,
-                    KeyCode::Char(c) => dst.push(c), // add typed char
+                    KeyCode::Char(c) => dst.push(c),
                     KeyCode::Backspace => {
                         dst.pop();
                     }
@@ -168,8 +168,8 @@ fn render(frame: &mut Frame, src: &str, dst: &str, status: &Status, theme: &Them
         .split(vchunks[0]);
 
     let block_width = std::cmp::min(size.width, 128);
-    let src_para = filename_block("Current filename", src, &theme.src);
-    let dst_para = filename_block("New filename", dst, &theme.dst);
+    let src_para = filename_widget("Current filename", src, &theme.src);
+    let dst_para = filename_widget("New filename", dst, &theme.dst);
 
     let src_area = center(
         ui_chunks[0],
@@ -187,18 +187,26 @@ fn render(frame: &mut Frame, src: &str, dst: &str, status: &Status, theme: &Them
     frame.render_widget(status_widget(status, &theme.status), ui_chunks[2]);
 }
 
-fn filename_block<'a>(label: &'a str, filename: &'a str, theme: &'a WidgetTheme) -> Paragraph<'a> {
-    let mut style = Style::default();
+fn filename_widget<'a>(label: &'a str, filename: &'a str, theme: &'a WidgetTheme) -> Paragraph<'a> {
+    let mut block_style = Style::default();
+    let mut text_style = Style::default();
+    if theme.block.fg.is_some() {
+        block_style = block_style.fg(theme.block.fg.unwrap());
+    }
+    if theme.block.bg.is_some() {
+        block_style = block_style.bg(theme.block.bg.unwrap());
+    }
     if theme.text.fg.is_some() {
-        style = style.fg(theme.text.fg.unwrap());
+        text_style = text_style.fg(theme.text.fg.unwrap());
     }
     if theme.text.bg.is_some() {
-        style = style.fg(theme.text.bg.unwrap());
+        text_style = text_style.bg(theme.text.bg.unwrap());
     }
-    Paragraph::new(Text::raw(filename)).style(style).block(
+    Paragraph::new(Text::raw(filename)).style(text_style).block(
         Block::default()
             .borders(Borders::ALL)
             .border_type(BorderType::Rounded)
+            .border_style(block_style)
             .title(label),
     )
 }
