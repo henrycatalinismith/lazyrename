@@ -13,12 +13,85 @@ use ratatui::{
 };
 use std::{env, fs, io, time::Duration};
 
+struct ThemeEntry {
+    pub bg: Option<Color>,
+    pub fg: Option<Color>,
+}
+
+struct WidgetTheme {
+    pub block: ThemeEntry,
+    pub text: ThemeEntry,
+}
+
+struct StatusTheme {
+    pub idle: ThemeEntry,
+    pub error: ThemeEntry,
+}
+
+struct Theme {
+    pub src: WidgetTheme,
+    pub dst: WidgetTheme,
+    pub status: StatusTheme,
+}
+
+enum StatusLevel {
+    Idle,
+    Error,
+}
+
+struct Status {
+    pub text: String,
+    pub level: StatusLevel,
+}
+
+impl StatusTheme {
+    fn get(&self, level: &StatusLevel) -> &ThemeEntry {
+        match level {
+            StatusLevel::Idle => &self.idle,
+            StatusLevel::Error => &self.error,
+        }
+    }
+}
+
 fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
         eprintln!("Usage: lazyrename <filename>");
         std::process::exit(1);
     }
+
+    let theme = Theme {
+        src: WidgetTheme {
+            block: ThemeEntry {
+                bg: Some(Color::Black),
+                fg: Some(Color::Black),
+            },
+            text: ThemeEntry {
+                bg: Some(Color::Black),
+                fg: Some(Color::Black),
+            },
+        },
+        dst: WidgetTheme {
+            block: ThemeEntry {
+                bg: Some(Color::White),
+                fg: Some(Color::White),
+            },
+            text: ThemeEntry {
+                bg: Some(Color::White),
+                fg: Some(Color::White),
+            },
+        },
+        status: StatusTheme {
+            idle: ThemeEntry {
+                bg: None,
+                fg: Some(Color::Black),
+            },
+            error: ThemeEntry {
+                bg: None,
+                fg: Some(Color::Red),
+            },
+        },
+    };
 
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -28,11 +101,15 @@ fn main() -> io::Result<()> {
 
     let src = args[1].clone();
     let mut dst = args[1].clone();
-    let mut status = "Press Enter to rename, Esc to cancel".to_string();
+
+    let mut status = Status {
+        text: "Press Enter to rename, Esc to cancel".to_string(),
+        level: StatusLevel::Idle,
+    };
 
     loop {
         terminal.draw(|f| {
-            render(f, &src, &dst, &status);
+            render(f, &src, &dst, &status, &theme);
         })?;
 
         if poll(Duration::from_millis(32))? {
@@ -48,7 +125,10 @@ fn main() -> io::Result<()> {
                         Ok(_) => {
                             break;
                         }
-                        Err(e) => status = format!("{}", e),
+                        Err(e) => {
+                            status.text = format!("{}", e);
+                            status.level = StatusLevel::Error;
+                        }
                     },
                     _ => {}
                 }
@@ -69,7 +149,7 @@ fn center(area: Rect, horizontal: Constraint, vertical: Constraint) -> Rect {
     area
 }
 
-fn render(frame: &mut Frame, src: &str, dst: &str, status: &str) {
+fn render(frame: &mut Frame, src: &str, dst: &str, status: &Status, theme: &Theme) {
     let size = frame.area();
 
     let vchunks = Layout::default()
@@ -88,8 +168,8 @@ fn render(frame: &mut Frame, src: &str, dst: &str, status: &str) {
         .split(vchunks[0]);
 
     let block_width = std::cmp::min(size.width, 128);
-    let src_para = filename_block("Current filename", src, Color::Yellow);
-    let dst_para = filename_block("New filename", dst, Color::White);
+    let src_para = filename_block("Current filename", src, &theme.src);
+    let dst_para = filename_block("New filename", dst, &theme.dst);
 
     let src_area = center(
         ui_chunks[0],
@@ -102,24 +182,39 @@ fn render(frame: &mut Frame, src: &str, dst: &str, status: &str) {
         Constraint::Length(3),
     );
 
-    let status_line = Paragraph::new(Text::raw(status))
-        .style(Style::default().fg(Color::Gray))
-        .alignment(ratatui::layout::Alignment::Center);
-
     frame.render_widget(src_para, src_area);
     frame.render_widget(dst_para, dst_area);
-    frame.render_widget(status_line, ui_chunks[2]);
+    frame.render_widget(status_widget(status, &theme.status), ui_chunks[2]);
 }
 
-fn filename_block<'a>(label: &'a str, filename: &'a str, fg: Color) -> Paragraph<'a> {
-    Paragraph::new(Text::raw(filename))
-        .style(Style::default().fg(fg))
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_type(BorderType::Rounded)
-                .title(label),
-        )
+fn filename_block<'a>(label: &'a str, filename: &'a str, theme: &'a WidgetTheme) -> Paragraph<'a> {
+    let mut style = Style::default();
+    if theme.text.fg.is_some() {
+        style = style.fg(theme.text.fg.unwrap());
+    }
+    if theme.text.bg.is_some() {
+        style = style.fg(theme.text.bg.unwrap());
+    }
+    Paragraph::new(Text::raw(filename)).style(style).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .border_type(BorderType::Rounded)
+            .title(label),
+    )
+}
+
+fn status_widget<'a>(status: &'a Status, theme: &'a StatusTheme) -> Paragraph<'a> {
+    let mut style = Style::default();
+    let theme_entry = theme.get(&status.level);
+    if theme_entry.fg.is_some() {
+        style = style.fg(theme_entry.fg.unwrap());
+    }
+    if theme_entry.bg.is_some() {
+        style = style.bg(theme_entry.bg.unwrap());
+    }
+    Paragraph::new(Text::raw(status.text.clone()))
+        .style(style)
+        .alignment(ratatui::layout::Alignment::Center)
 }
 
 fn rename(src: &str, dst: &str) -> io::Result<()> {
