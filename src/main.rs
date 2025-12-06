@@ -80,7 +80,11 @@ fn render(frame: &mut Frame, src: &str, dst: &str) {
 
     let ui_chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(3), Constraint::Length(3)])
+        .constraints([
+            Constraint::Length(3),
+            Constraint::Length(3),
+            Constraint::Length(1),
+        ])
         .flex(Flex::Center)
         .split(vchunks[0]);
 
@@ -98,8 +102,13 @@ fn render(frame: &mut Frame, src: &str, dst: &str) {
         Constraint::Length(3),
     );
 
+    let status_line = Paragraph::new(Text::raw("Press Enter to apply, Esc to cancel"))
+        .style(Style::default().fg(Color::Gray))
+        .alignment(ratatui::layout::Alignment::Center);
+
     frame.render_widget(src_para, src_area);
     frame.render_widget(dst_para, dst_area);
+    frame.render_widget(status_line, ui_chunks[2]);
 }
 
 fn filename_block<'a>(label: &'a str, filename: &'a str, fg: Color) -> Paragraph<'a> {
