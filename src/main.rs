@@ -138,6 +138,7 @@ fn main() -> io::Result<()> {
 
     disable_raw_mode()?;
     execute!(std::io::stdout(), LeaveAlternateScreen)?;
+    println!("{}", dst);
     return Ok(());
 }
 
