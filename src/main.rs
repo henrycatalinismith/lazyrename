@@ -11,7 +11,7 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Paragraph},
     Frame, Terminal,
 };
-use std::{env, io, time::Duration};
+use std::{env, fs, io, time::Duration};
 
 fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
@@ -42,6 +42,15 @@ fn main() -> io::Result<()> {
                     KeyCode::Backspace => {
                         dst.pop();
                     }
+
+                    KeyCode::Enter => match rename(&src, &dst) {
+                        Ok(_) => {
+                            break;
+                        }
+                        Err(e) => {
+                            eprintln!("Error renaming: {}", e);
+                        }
+                    },
                     _ => {}
                 }
             }
@@ -102,4 +111,12 @@ fn filename_block<'a>(label: &'a str, filename: &'a str, fg: Color) -> Paragraph
                 .border_type(BorderType::Rounded)
                 .title(label),
         )
+}
+
+fn rename(src: &str, dst: &str) -> io::Result<()> {
+    if src == dst {
+        return Ok(());
+    }
+    fs::rename(src, dst)?;
+    Ok(())
 }
