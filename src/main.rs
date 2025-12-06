@@ -5,8 +5,9 @@ use crossterm::{
 };
 use ratatui::{
     backend::CrosstermBackend,
-    layout::{Constraint, Flex, Layout, Rect},
+    layout::{Constraint, Direction, Flex, Layout, Rect},
     text::Text,
+    widgets::Paragraph,
     Frame, Terminal,
 };
 use std::{env, io, time::Duration};
@@ -24,11 +25,12 @@ fn main() -> io::Result<()> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let filename = args[1].clone();
+    let src = args[1].clone();
+    let dst = args[1].clone();
 
     loop {
         terminal.draw(|f| {
-            render(f, &filename);
+            render(f, &src, &dst);
         })?;
 
         if poll(Duration::from_millis(32))? {
@@ -54,12 +56,35 @@ fn center(area: Rect, horizontal: Constraint, vertical: Constraint) -> Rect {
     area
 }
 
-fn render(frame: &mut Frame, filename: &str) {
-    let text = Text::raw(filename);
-    let area = center(
-        frame.area(),
-        Constraint::Length(text.width() as u16),
+fn render(frame: &mut Frame, src: &str, dst: &str) {
+    let size = frame.area();
+
+    let vchunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(2)])
+        .vertical_margin((size.height - 2) / 2)
+        .split(size);
+
+    let ui_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(1), Constraint::Length(2)])
+        .horizontal_margin(0)
+        .split(vchunks[0]);
+
+    let src_para = Paragraph::new(Text::raw(src));
+    let dst_para = Paragraph::new(Text::raw(dst));
+
+    let src_area = center(
+        ui_chunks[0],
+        Constraint::Length(src.len() as u16),
         Constraint::Length(1),
     );
-    frame.render_widget(text, area);
+    let dst_area = center(
+        ui_chunks[1],
+        Constraint::Length(dst.len() as u16),
+        Constraint::Length(1),
+    );
+
+    frame.render_widget(src_para, src_area);
+    frame.render_widget(dst_para, dst_area);
 }
