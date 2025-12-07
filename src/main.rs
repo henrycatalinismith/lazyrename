@@ -1,3 +1,4 @@
+use clap::Parser;
 use crossterm::{
     event::{poll, Event, KeyCode},
     execute,
@@ -12,11 +13,26 @@ use ratatui::{
     Frame, Terminal,
 };
 use std::{
-    env, fs, io,
+    fs, io,
     path::Path,
     process::{Command, Stdio},
     time::Duration,
 };
+
+#[derive(Parser, Debug)]
+#[command(name="lazyrename", version, about, long_about = None)]
+struct Args {
+    /// Helix mode
+    #[arg(long)]
+    helix: bool,
+
+    /// Zellij mode
+    #[arg(long)]
+    zellij: bool,
+
+    /// Input filename (required positional argument)
+    filename: String,
+}
 
 struct ThemeEntry {
     pub bg: Option<Color>,
@@ -59,16 +75,10 @@ impl StatusTheme {
 }
 
 fn main() -> io::Result<()> {
-    let mut args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
+    let args = Args::parse();
+    if args.filename.is_empty() {
         eprintln!("Usage: lazyrename <filename>");
         std::process::exit(1);
-    }
-
-    let mut helix_zellij_mode = false;
-    if let Some(pos) = args.iter().position(|x| x == "-hz") {
-        helix_zellij_mode = true;
-        args.remove(pos);
     }
 
     let theme = Theme {
@@ -110,8 +120,8 @@ fn main() -> io::Result<()> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let src = args[1].clone();
-    let mut dst = args[1].clone();
+    let src = args.filename.clone();
+    let mut dst = args.filename.clone();
 
     let mut status = Status {
         text: "Press Enter to rename, Esc to cancel".to_string(),
@@ -132,7 +142,7 @@ fn main() -> io::Result<()> {
                         dst.pop();
                     }
 
-                    KeyCode::Enter => match rename(&src, &dst) {
+                    KeyCode::Enter => match rename(&src, &dst, &args) {
                         Ok(_) => {
                             break;
                         }
@@ -150,9 +160,6 @@ fn main() -> io::Result<()> {
     disable_raw_mode()?;
     execute!(std::io::stdout(), LeaveAlternateScreen)?;
     println!("{}", dst);
-    if helix_zellij_mode {
-        open_in_helix(&dst);
-    }
     return Ok(());
 }
 
@@ -240,7 +247,7 @@ fn status_widget<'a>(status: &'a Status, theme: &'a StatusTheme) -> Paragraph<'a
         .alignment(ratatui::layout::Alignment::Center)
 }
 
-fn rename(src: &str, dst: &str) -> io::Result<()> {
+fn rename(src: &str, dst: &str, args: &Args) -> io::Result<()> {
     if src == dst {
         return Ok(());
     }
@@ -250,7 +257,15 @@ fn rename(src: &str, dst: &str) -> io::Result<()> {
             fs::create_dir_all(parent)?;
         }
     }
-    fs::rename(src, dst)?;
+    if args.helix && args.zellij {
+        let helix_command = format!(":move \"{}\"", dst);
+        zellij_action(&["toggle-floating-panes"]);
+        zellij_action(&["write", "27"]);
+        zellij_action(&["write-chars", &helix_command]);
+        zellij_action(&["write", "13"]);
+    } else {
+        fs::rename(src, dst)?;
+    }
     Ok(())
 }
 
@@ -261,15 +276,4 @@ fn zellij_action(args: &[&str]) {
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .status();
-}
-
-fn open_in_helix(filename: &str) {
-    let helix_command = format!(":open {}", filename);
-
-    zellij_action(&["toggle-floating-panes"]);
-    zellij_action(&["write", "27"]);
-    zellij_action(&["write-chars", ":buffer-close"]);
-    zellij_action(&["write", "13"]);
-    zellij_action(&["write-chars", &helix_command]);
-    zellij_action(&["write", "13"]);
 }

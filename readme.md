@@ -32,7 +32,7 @@ Add this to your `~/.config/helix/config.toml`.
 
 ```
 [keys.normal.backspace]
-r = ":sh zellij run --close-on-exit -f -x=20%% -y=33%% --width=60%% --height=9 -- lazyrename -hz \"%{buffer_name}\""
+r = ":sh zellij run --close-on-exit -f -x=20%% -y=33%% --width=60%% --height=9 -- lazyrename --helix --zellij \"%{buffer_name}\""
 ```
 
 ## License
