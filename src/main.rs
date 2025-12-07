@@ -74,6 +74,11 @@ impl StatusTheme {
     }
 }
 
+struct State {
+    src: String,
+    dst: String,
+}
+
 fn main() -> io::Result<()> {
     let args = Args::parse();
     if args.filename.is_empty() {
@@ -120,8 +125,10 @@ fn main() -> io::Result<()> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let src = args.filename.clone();
-    let mut dst = args.filename.clone();
+    let mut state = State {
+        src: args.filename.clone(),
+        dst: args.filename.clone(),
+    };
 
     let mut status = Status {
         text: "Press Enter to rename, Esc to cancel".to_string(),
@@ -130,19 +137,19 @@ fn main() -> io::Result<()> {
 
     loop {
         terminal.draw(|f| {
-            render(f, &src, &dst, &status, &theme);
+            render(f, &state, &status, &theme);
         })?;
 
         if poll(Duration::from_millis(32))? {
             if let Event::Key(key) = crossterm::event::read()? {
                 match key.code {
                     KeyCode::Esc => break,
-                    KeyCode::Char(c) => dst.push(c),
+                    KeyCode::Char(c) => state.dst.push(c),
                     KeyCode::Backspace => {
-                        dst.pop();
+                        state.dst.pop();
                     }
 
-                    KeyCode::Enter => match rename(&src, &dst, &args) {
+                    KeyCode::Enter => match rename(&state, &args) {
                         Ok(_) => {
                             break;
                         }
@@ -159,7 +166,6 @@ fn main() -> io::Result<()> {
 
     disable_raw_mode()?;
     execute!(std::io::stdout(), LeaveAlternateScreen)?;
-    println!("{}", dst);
     return Ok(());
 }
 
@@ -171,7 +177,7 @@ fn center(area: Rect, horizontal: Constraint, vertical: Constraint) -> Rect {
     area
 }
 
-fn render(frame: &mut Frame, src: &str, dst: &str, status: &Status, theme: &Theme) {
+fn render(frame: &mut Frame, state: &State, status: &Status, theme: &Theme) {
     let size = frame.area();
 
     let vchunks = Layout::default()
@@ -190,8 +196,8 @@ fn render(frame: &mut Frame, src: &str, dst: &str, status: &Status, theme: &Them
         .split(vchunks[0]);
 
     let block_width = std::cmp::min(size.width, 128);
-    let src_para = filename_widget("Current filename", src, &theme.src);
-    let dst_para = filename_widget("New filename", dst, &theme.dst);
+    let src_para = filename_widget("Current filename", &state.src, &theme.src);
+    let dst_para = filename_widget("New filename", &state.dst, &theme.dst);
 
     let src_area = center(
         ui_chunks[0],
@@ -247,24 +253,24 @@ fn status_widget<'a>(status: &'a Status, theme: &'a StatusTheme) -> Paragraph<'a
         .alignment(ratatui::layout::Alignment::Center)
 }
 
-fn rename(src: &str, dst: &str, args: &Args) -> io::Result<()> {
-    if src == dst {
+fn rename(state: &State, args: &Args) -> io::Result<()> {
+    if state.src == state.dst {
         return Ok(());
     }
-    let dst_path = Path::new(dst);
+    let dst_path = Path::new(&state.dst);
     if let Some(parent) = dst_path.parent() {
         if !parent.as_os_str().is_empty() {
             fs::create_dir_all(parent)?;
         }
     }
     if args.helix && args.zellij {
-        let helix_command = format!(":move \"{}\"", dst);
+        let helix_command = format!(":move \"{}\"", state.dst);
         zellij_action(&["toggle-floating-panes"]);
         zellij_action(&["write", "27"]);
         zellij_action(&["write-chars", &helix_command]);
         zellij_action(&["write", "13"]);
     } else {
-        fs::rename(src, dst)?;
+        fs::rename(&state.src, &state.dst)?;
     }
     Ok(())
 }
