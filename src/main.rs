@@ -1,9 +1,5 @@
 use clap::Parser;
-use crossterm::{
-    event::{poll, Event, KeyCode},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
+use rat_widget::text_input::{handle_events, TextInput, TextInputState};
 use ratatui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Flex, Layout, Rect},
@@ -11,6 +7,14 @@ use ratatui::{
     text::Text,
     widgets::{Block, BorderType, Borders, Paragraph},
     Frame, Terminal,
+};
+use ratatui::{
+    crossterm::{
+        event::{poll, Event, KeyCode},
+        execute,
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    },
+    layout::Position,
 };
 use std::{
     fs, io,
@@ -50,8 +54,7 @@ struct StatusTheme {
 }
 
 struct Theme {
-    pub src: WidgetTheme,
-    pub dst: WidgetTheme,
+    pub input: WidgetTheme,
     pub status: StatusTheme,
 }
 
@@ -76,7 +79,7 @@ impl StatusTheme {
 
 struct State {
     src: String,
-    dst: String,
+    tis: TextInputState,
 }
 
 fn main() -> io::Result<()> {
@@ -87,17 +90,7 @@ fn main() -> io::Result<()> {
     }
 
     let theme = Theme {
-        src: WidgetTheme {
-            block: ThemeEntry {
-                bg: None,
-                fg: Some(Color::Blue),
-            },
-            text: ThemeEntry {
-                bg: None,
-                fg: Some(Color::Black),
-            },
-        },
-        dst: WidgetTheme {
+        input: WidgetTheme {
             block: ThemeEntry {
                 bg: None,
                 fg: Some(Color::White),
@@ -127,8 +120,10 @@ fn main() -> io::Result<()> {
 
     let mut state = State {
         src: args.filename.clone(),
-        dst: args.filename.clone(),
+        tis: TextInputState::new(),
     };
+
+    state.tis.set_value(args.filename.clone());
 
     let mut status = Status {
         text: "Press Enter to rename, Esc to cancel".to_string(),
@@ -137,18 +132,13 @@ fn main() -> io::Result<()> {
 
     loop {
         terminal.draw(|f| {
-            render(f, &state, &status, &theme);
+            render(f, &mut state, &status, &theme);
         })?;
 
         if poll(Duration::from_millis(32))? {
-            if let Event::Key(key) = crossterm::event::read()? {
+            if let Event::Key(key) = ratatui::crossterm::event::read()? {
                 match key.code {
                     KeyCode::Esc => break,
-                    KeyCode::Char(c) => state.dst.push(c),
-                    KeyCode::Backspace => {
-                        state.dst.pop();
-                    }
-
                     KeyCode::Enter => match rename(&state, &args) {
                         Ok(_) => {
                             break;
@@ -158,7 +148,9 @@ fn main() -> io::Result<()> {
                             status.level = StatusLevel::Error;
                         }
                     },
-                    _ => {}
+                    _ => {
+                        handle_events(&mut state.tis, true, &Event::Key(key));
+                    }
                 }
             }
         }
@@ -177,7 +169,7 @@ fn center(area: Rect, horizontal: Constraint, vertical: Constraint) -> Rect {
     area
 }
 
-fn render(frame: &mut Frame, state: &State, status: &Status, theme: &Theme) {
+fn render(frame: &mut Frame, state: &mut State, status: &Status, theme: &Theme) {
     let size = frame.area();
 
     let vchunks = Layout::default()
@@ -187,56 +179,48 @@ fn render(frame: &mut Frame, state: &State, status: &Status, theme: &Theme) {
 
     let ui_chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Length(3),
-            Constraint::Length(3),
-            Constraint::Length(1),
-        ])
+        .constraints([Constraint::Length(3), Constraint::Length(1)])
         .flex(Flex::Center)
         .split(vchunks[0]);
 
     let block_width = std::cmp::min(size.width, 128);
-    let src_para = filename_widget("Current filename", &state.src, &theme.src);
-    let dst_para = filename_widget("New filename", &state.dst, &theme.dst);
 
-    let src_area = center(
+    let input_area = center(
         ui_chunks[0],
         Constraint::Length(block_width),
         Constraint::Length(3),
     );
-    let dst_area = center(
-        ui_chunks[1],
-        Constraint::Length(block_width),
-        Constraint::Length(3),
-    );
 
-    frame.render_widget(src_para, src_area);
-    frame.render_widget(dst_para, dst_area);
-    frame.render_widget(status_widget(status, &theme.status), ui_chunks[2]);
-}
-
-fn filename_widget<'a>(label: &'a str, filename: &'a str, theme: &'a WidgetTheme) -> Paragraph<'a> {
     let mut block_style = Style::default();
     let mut text_style = Style::default();
-    if theme.block.fg.is_some() {
-        block_style = block_style.fg(theme.block.fg.unwrap());
+    if theme.input.block.fg.is_some() {
+        block_style = block_style.fg(theme.input.block.fg.unwrap());
     }
-    if theme.block.bg.is_some() {
-        block_style = block_style.bg(theme.block.bg.unwrap());
+    if theme.input.block.bg.is_some() {
+        block_style = block_style.bg(theme.input.block.bg.unwrap());
     }
-    if theme.text.fg.is_some() {
-        text_style = text_style.fg(theme.text.fg.unwrap());
+    if theme.input.text.fg.is_some() {
+        text_style = text_style.fg(theme.input.text.fg.unwrap());
     }
-    if theme.text.bg.is_some() {
-        text_style = text_style.bg(theme.text.bg.unwrap());
+    if theme.input.text.bg.is_some() {
+        text_style = text_style.bg(theme.input.text.bg.unwrap());
     }
-    Paragraph::new(Text::raw(filename)).style(text_style).block(
-        Block::default()
-            .borders(Borders::ALL)
-            .border_type(BorderType::Rounded)
-            .border_style(block_style)
-            .title(label),
-    )
+
+    let input_block = Block::default()
+        .borders(Borders::ALL)
+        .border_type(BorderType::Rounded)
+        .border_style(block_style)
+        .title("New filename");
+
+    frame.render_widget(input_block.clone(), input_area);
+    frame.render_widget(status_widget(status, &theme.status), ui_chunks[1]);
+
+    let inner = input_block.inner(input_area);
+    let textinput_widget = TextInput::new().style(text_style);
+    frame.render_stateful_widget(textinput_widget, inner, &mut state.tis);
+    let cursor_x = inner.x + state.tis.cursor() as u16;
+    let cursor_y = inner.y;
+    frame.set_cursor_position(Position::from((cursor_x, cursor_y)));
 }
 
 fn status_widget<'a>(status: &'a Status, theme: &'a StatusTheme) -> Paragraph<'a> {
@@ -254,23 +238,24 @@ fn status_widget<'a>(status: &'a Status, theme: &'a StatusTheme) -> Paragraph<'a
 }
 
 fn rename(state: &State, args: &Args) -> io::Result<()> {
-    if state.src == state.dst {
+    let dst: String = state.tis.value::<String>().to_string();
+    if state.src == dst {
         return Ok(());
     }
-    let dst_path = Path::new(&state.dst);
+    let dst_path = Path::new(&dst);
     if let Some(parent) = dst_path.parent() {
         if !parent.as_os_str().is_empty() {
             fs::create_dir_all(parent)?;
         }
     }
     if args.helix && args.zellij {
-        let helix_command = format!(":move \"{}\"", state.dst);
+        let helix_command = format!(":move \"{}\"", dst);
         zellij_action(&["toggle-floating-panes"]);
         zellij_action(&["write", "27"]);
         zellij_action(&["write-chars", &helix_command]);
         zellij_action(&["write", "13"]);
     } else {
-        fs::rename(&state.src, &state.dst)?;
+        fs::rename(&state.src, &dst)?;
     }
     Ok(())
 }

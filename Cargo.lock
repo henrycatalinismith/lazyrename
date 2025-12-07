@@ -206,15 +206,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "convert_case"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "633458d4ef8c78b72454de2d54fd6ab2e60f9e02be22f3c6104cdc8a4e0fceb9"
-dependencies = [
- "unicode-segmentation",
-]
-
-[[package]]
 name = "core-foundation-sys"
 version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -230,25 +221,7 @@ dependencies = [
  "crossterm_winapi",
  "mio",
  "parking_lot",
- "rustix 0.38.44",
- "signal-hook",
- "signal-hook-mio",
- "winapi",
-]
-
-[[package]]
-name = "crossterm"
-version = "0.29.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8b9f2e4c67f833b660cdb0a3523065869fb35570177239812ed4c905aeff87b"
-dependencies = [
- "bitflags",
- "crossterm_winapi",
- "derive_more",
- "document-features",
- "mio",
- "parking_lot",
- "rustix 1.1.2",
+ "rustix",
  "signal-hook",
  "signal-hook-mio",
  "winapi",
@@ -296,37 +269,6 @@ dependencies = [
  "darling_core",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "derive_more"
-version = "2.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "10b768e943bed7bf2cab53df09f4bc34bfd217cdb57d971e769874c9a6710618"
-dependencies = [
- "derive_more-impl",
-]
-
-[[package]]
-name = "derive_more-impl"
-version = "2.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d286bfdaf75e988b4a78e013ecd79c581e06399ab53fbacd2d916c2f904f30b"
-dependencies = [
- "convert_case",
- "proc-macro2",
- "quote",
- "rustc_version",
- "syn",
-]
-
-[[package]]
-name = "document-features"
-version = "0.2.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4b8a88685455ed29a21542a33abd9cb6510b6b129abadabdcef0f4c55bc8f61"
-dependencies = [
- "litrs",
 ]
 
 [[package]]
@@ -506,7 +448,6 @@ name = "lazyrename"
 version = "0.0.0"
 dependencies = [
  "clap",
- "crossterm 0.29.0",
  "rat-widget",
  "ratatui",
 ]
@@ -522,18 +463,6 @@ name = "linux-raw-sys"
 version = "0.4.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d26c52dbd32dccf2d10cac7725f8eae5296885fb5703b261f7d0a0739ec807ab"
-
-[[package]]
-name = "linux-raw-sys"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df1d3c3b53da64cf5760482273a98e575c651a67eec7f77df96b5b642de8f039"
-
-[[package]]
-name = "litrs"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11d3d7f243d5c5a8b9bb5d6dd2b1602c0cb0b9db1621bafc7ed66e35ff9fe092"
 
 [[package]]
 name = "lock_api"
@@ -669,7 +598,7 @@ version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8527a6352d150a8767e6422edbdbe5c74919913d41acd2c17bc5571e1aa09a7b"
 dependencies = [
- "crossterm 0.28.1",
+ "crossterm",
  "log",
  "ratatui",
 ]
@@ -680,7 +609,7 @@ version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "235615eb9df9b5b714b5208a7c9118a99dd58e26e858d26766554dadb4f7c878"
 dependencies = [
- "crossterm 0.28.1",
+ "crossterm",
  "dyn-clone",
  "fxhash",
  "log",
@@ -695,7 +624,7 @@ version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b7c1dbf7413ff6750c73761a0e0ce15238c343c0b6980bb0fb28ce4f7503d521"
 dependencies = [
- "crossterm 0.28.1",
+ "crossterm",
  "log",
  "rat-cursor",
  "rat-event",
@@ -711,7 +640,7 @@ version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6f0c0c1fc5199fe859c2274bf5e9a230a4cc33bfa6bda0597d11ecf0db0d9ee3"
 dependencies = [
- "crossterm 0.28.1",
+ "crossterm",
  "log",
  "rat-cursor",
  "rat-event",
@@ -729,7 +658,7 @@ version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b305a097bddf04bbdb3b4b67ceda45a4ed164c1234b94a462b0482a4256dde5"
 dependencies = [
- "crossterm 0.28.1",
+ "crossterm",
  "log",
  "rat-cursor",
  "rat-event",
@@ -753,7 +682,7 @@ version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "85dacfd8566e0cc39f9dfab7743157c71af092ff8a86903e6911d5c210f6de6a"
 dependencies = [
- "crossterm 0.28.1",
+ "crossterm",
  "log",
  "rat-event",
  "rat-reloc",
@@ -767,7 +696,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "22503abeeaede97129ab00a0b0641c499cfa4f7de9f476bc0da8e11629eb3e9c"
 dependencies = [
  "chrono",
- "crossterm 0.28.1",
+ "crossterm",
  "dyn-clone",
  "format_num_pattern",
  "iset",
@@ -793,7 +722,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9bf7d2630f6596aa583b9097d74e453e048c6a9e5fd2708f4a8d126600042546"
 dependencies = [
  "chrono",
- "crossterm 0.28.1",
+ "crossterm",
  "log",
  "map_range_int",
  "rat-event",
@@ -818,7 +747,7 @@ dependencies = [
  "bitflags",
  "cassowary",
  "compact_str",
- "crossterm 0.28.1",
+ "crossterm",
  "indoc",
  "instability",
  "itertools",
@@ -886,15 +815,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "357703d41365b4b27c590e3ed91eabb1b663f07c4c084095e60cbed4362dff0d"
 
 [[package]]
-name = "rustc_version"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cfcb3a22ef46e85b45de6ee7e79d063319ebb6594faafcf1c225ea92ab6e9b92"
-dependencies = [
- "semver",
-]
-
-[[package]]
 name = "rustix"
 version = "0.38.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -903,21 +823,8 @@ dependencies = [
  "bitflags",
  "errno",
  "libc",
- "linux-raw-sys 0.4.15",
+ "linux-raw-sys",
  "windows-sys 0.59.0",
-]
-
-[[package]]
-name = "rustix"
-version = "1.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd15f8a2c5551a84d56efdc1cd049089e409ac19a3072d5037a17fd70719ff3e"
-dependencies = [
- "bitflags",
- "errno",
- "libc",
- "linux-raw-sys 0.11.0",
- "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -937,12 +844,6 @@ name = "scopeguard"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
-
-[[package]]
-name = "semver"
-version = "1.0.27"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d767eb0aabc880b29956c35734170f26ed551a859dbd361d140cdbeca61ab1e2"
 
 [[package]]
 name = "shlex"
