@@ -124,6 +124,9 @@ fn main() -> io::Result<()> {
     };
 
     state.input.set_value(args.filename.clone());
+    state
+        .input
+        .set_cursor(args.filename.chars().count().try_into().unwrap(), false);
 
     let mut status = Status {
         text: "Press Enter to rename, Esc to cancel".to_string(),
