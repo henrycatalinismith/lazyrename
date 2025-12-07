@@ -79,7 +79,7 @@ impl StatusTheme {
 
 struct State {
     src: String,
-    tis: TextInputState,
+    input: TextInputState,
 }
 
 fn main() -> io::Result<()> {
@@ -120,10 +120,10 @@ fn main() -> io::Result<()> {
 
     let mut state = State {
         src: args.filename.clone(),
-        tis: TextInputState::new(),
+        input: TextInputState::new(),
     };
 
-    state.tis.set_value(args.filename.clone());
+    state.input.set_value(args.filename.clone());
 
     let mut status = Status {
         text: "Press Enter to rename, Esc to cancel".to_string(),
@@ -149,7 +149,7 @@ fn main() -> io::Result<()> {
                         }
                     },
                     _ => {
-                        handle_events(&mut state.tis, true, &Event::Key(key));
+                        handle_events(&mut state.input, true, &Event::Key(key));
                     }
                 }
             }
@@ -217,8 +217,8 @@ fn render(frame: &mut Frame, state: &mut State, status: &Status, theme: &Theme) 
 
     let inner = input_block.inner(input_area);
     let textinput_widget = TextInput::new().style(text_style);
-    frame.render_stateful_widget(textinput_widget, inner, &mut state.tis);
-    let cursor_x = inner.x + state.tis.cursor() as u16;
+    frame.render_stateful_widget(textinput_widget, inner, &mut state.input);
+    let cursor_x = inner.x + state.input.cursor() as u16;
     let cursor_y = inner.y;
     frame.set_cursor_position(Position::from((cursor_x, cursor_y)));
 }
@@ -238,7 +238,7 @@ fn status_widget<'a>(status: &'a Status, theme: &'a StatusTheme) -> Paragraph<'a
 }
 
 fn rename(state: &State, args: &Args) -> io::Result<()> {
-    let dst: String = state.tis.value::<String>().to_string();
+    let dst: String = state.input.value::<String>().to_string();
     if state.src == dst {
         return Ok(());
     }
