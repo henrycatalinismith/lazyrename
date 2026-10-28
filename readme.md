@@ -2,7 +2,7 @@
 
 File rename TUI intended for easy integration with Helix and Zellij.
 
-<video src="https://codeberg.org/henrycatalinismith/lazyrename/media/branch/main/demo.mp4" width="512" controls></video>
+<video src="https://github.com/henrycatalinismith/lazyrename/raw/main/demo.mp4" width="512" controls></video>
 
 If you use Helix and Zellij, lazyrename is a way to hook up a nice file renaming workflow.
 The idea is that lazyrename handles all the dirty work for you. You don't need to think about
@@ -20,7 +20,7 @@ You fire up lazyrename, choose your new name, hit enter, and you're immediately 
 Run these commands.
 
 ```
-git clone ssh://git@codeberg.org/henrycatalinismith/lazyrename.git
+git clone git@github.com:henrycatalinismith/lazyrename.git
 cd lazyrename
 cargo build --relase
 mv target/release/lazyrename ~/.local/bin
@@ -37,4 +37,4 @@ r = ":sh zellij run --close-on-exit -f -x=20%% -y=33%% --width=60%% --height=9 -
 
 ## License
 
-[MIT](https://codeberg.org/henrycatalinismith/lazyrename/src/branch/main/license)
+[MIT](https://github.com/henrycatalinismith/lazyrename/blob/main/license)
